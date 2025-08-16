@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Percentil de Escore de Cálcio Coronariano</title>
+    <!-- Link para a fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Link para o arquivo CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Meta tags para PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFFFFF">
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Percentil de Escore de Cálcio</h1>
+
+        <div class="main-content-area">
+            <div class="form-section">
+                <div class="input-group">
+                    <label for="calciumScore">Escore de Cálcio:</label>
+                    <input type="number" id="calciumScore" min="0" step="1" placeholder="Ex: 150" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="age">Idade:</label>
+                    <input type="number" id="age" min="35" max="85" placeholder="Ex: 55" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="sex">Sexo:</label>
+                    <select id="sex" required>
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="male">Masculino</option>
+                        <option value="female">Feminino</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="ethnicity">Etnia:</label>
+                    <select id="ethnicity" required>
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="western">Ocidental</option>
+                        <option value="asian">Asiática</option>
+                    </select>
+                </div>
+
+                <button id="calculateBtn">Calcular Percentil</button>
+            </div>
+
+            <div class="result-section">
+                <div class="result-area">
+                    <h2>Resultado</h2>
+                    <p id="percentilPrincipal">Preencha os campos para calcular.</p>
+                    <p id="percentilExplicacao"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção dedicada e centralizada para o gráfico -->
+        <div class="graph-section-wrapper">
+            <div id="chartWrapper" class="chart-wrapper-aspect-ratio" style="display: none;">
+                <div id="cacChartPlotly" class="chart-area"></div>
+            </div>
+        </div>
+
+        <!-- Div para o disclaimer -->
+        <div class="disclaimer">
+            <p id="disclaimer-text"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

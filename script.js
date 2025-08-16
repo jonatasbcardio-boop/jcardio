@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const ethnicitySelect = document.getElementById('ethnicity');
     const calculateBtn = document.getElementById('calculateBtn');
     
-    // Novos elementos de resultado
     const percentilPrincipalP = document.getElementById('percentilPrincipal');
     const percentilExplicacaoP = document.getElementById('percentilExplicacao');
     
@@ -68,26 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const sex = sexSelect.value;
         const ethnicity = ethnicitySelect.value;
         
-        // Limpa resultados anteriores
         percentilExplicacaoP.textContent = '';
-
         if (isNaN(calciumScore) || calciumScore < 0 || !Number.isInteger(calciumScore)) { percentilPrincipalP.textContent = 'Erro: Escore inválido.'; chartWrapperDiv.style.display = 'none'; disclaimerText.textContent = ''; return; }
         if (isNaN(age) || age < 35 || age > 85) { percentilPrincipalP.textContent = 'Erro: Idade inválida.'; chartWrapperDiv.style.display = 'none'; disclaimerText.textContent = ''; return; }
         if (!sex) { percentilPrincipalP.textContent = 'Erro: Selecione o sexo.'; chartWrapperDiv.style.display = 'none'; disclaimerText.textContent = ''; return; }
         if (!ethnicity) { percentilPrincipalP.textContent = 'Erro: Selecione a etnia.'; chartWrapperDiv.style.display = 'none'; disclaimerText.textContent = ''; return; }
         
         try {
-            // --- MODIFICAÇÃO PRINCIPAL: Receber objeto e construir as frases ---
             const result = calculatePercentile(calciumScore, age, sex, ethnicity);
-
             if (result.value !== null) {
-                // Monta a primeira linha
                 percentilPrincipalP.textContent = `Percentil ${result.prefix}${result.value}.`;
-
-                // Monta a segunda linha (frase de explicação)
                 percentilExplicacaoP.textContent = `Percentil de ${result.value} significa que, em uma população de mesma idade, sexo e etnia, ${result.value}% das pessoas apresentam resultados iguais ou abaixo desse valor.`;
             } else {
-                // Caso não seja possível determinar
                 percentilPrincipalP.textContent = result.prefix;
                 percentilExplicacaoP.textContent = '';
             }
@@ -95,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             displayChart(calciumScore, age, sex, ethnicity);
             chartWrapperDiv.style.display = 'block';
             disclaimerText.innerHTML = `Os dados para esta calculadora foram extraídos do estudo "A pooled-analysis of age and sex based coronary artery calcium scores percentiles" por M.W.J. de Ronde et al., J Cardiovasc Comput Tomogr 14 (2020) 414–420. A interpolação das curvas de percentis é realizada utilizando Spline Cúbica Natural.`;
-
         } catch (error) {
             percentilPrincipalP.textContent = `Erro: ${error.message}`;
             chartWrapperDiv.style.display = 'none';
@@ -103,48 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    /**
-     * Calcula o percentil e retorna um objeto com valor e prefixo.
-     * @returns {{value: number|null, prefix: string}} Objeto com o valor numérico e o prefixo textual.
-     */
     function calculatePercentile(score, age, sex, ethnicity) {
-        const dataSet = NOMOGRAM_DATA[ethnicity][sex];
-        if (!dataSet) { throw new Error("Dados de nomograma não encontrados."); }
-
+        const dataSet = NOMOGRAM_DATA[ethnicity][sex]; if (!dataSet) { throw new Error("Dados de nomograma não encontrados."); }
         const interpolatedScores = [];
-        for (const p of KNOWN_PERCENTILES) {
-            const y_values = dataSet[p];
-            try { const spline = new CubicSpline(AGE_POINTS, y_values); let interpolatedValue = spline.interpolate(age); if (interpolatedValue < 0) interpolatedValue = 0; interpolatedScores.push({ percentile: p, score: Math.round(interpolatedValue) }); }
-            catch (e) { interpolatedScores.push({ percentile: p, score: y_values[0] }); }
-        }
-
-        if (score === 0) {
-            if (interpolatedScores[0].score > 0) { return { value: KNOWN_PERCENTILES[0], prefix: '< ' }; }
-            let resultPercentile = KNOWN_PERCENTILES[0];
-            for (let i = 0; i < interpolatedScores.length; i++) {
-                if (interpolatedScores[i].score <= 0) { resultPercentile = interpolatedScores[i].percentile; } else { break; }
-            }
-            return { value: resultPercentile, prefix: '≤ ' };
-        }
-
+        for (const p of KNOWN_PERCENTILES) { const y_values = dataSet[p]; try { const spline = new CubicSpline(AGE_POINTS, y_values); let interpolatedValue = spline.interpolate(age); if (interpolatedValue < 0) interpolatedValue = 0; interpolatedScores.push({ percentile: p, score: Math.round(interpolatedValue) }); } catch (e) { interpolatedScores.push({ percentile: p, score: y_values[0] }); } }
+        if (score === 0) { if (interpolatedScores[0].score > 0) { return { value: KNOWN_PERCENTILES[0], prefix: '< ' }; } let resultPercentile = KNOWN_PERCENTILES[0]; for (let i = 0; i < interpolatedScores.length; i++) { if (interpolatedScores[i].score <= 0) { resultPercentile = interpolatedScores[i].percentile; } else { break; } } return { value: resultPercentile, prefix: '≤ ' }; }
         if (score >= interpolatedScores[interpolatedScores.length - 1].score) { return { value: KNOWN_PERCENTILES[KNOWN_PERCENTILES.length - 1], prefix: '> ' }; }
         if (score < interpolatedScores[0].score && score > 0) { return { value: KNOWN_PERCENTILES[0], prefix: '< ' }; }
-
-        for (let i = 0; i < interpolatedScores.length - 1; i++) {
-            const p1 = interpolatedScores[i].percentile;
-            const s1 = interpolatedScores[i].score;
-            const p2 = interpolatedScores[i + 1].percentile;
-            const s2 = interpolatedScores[i + 1].score;
-
-            if (score === s1) return { value: p1, prefix: '' };
-            if (score === s2) return { value: p2, prefix: '' };
-            if (score > s1 && score < s2) {
-                if (s2 === s1) { return { value: p1, prefix: '' }; }
-                const calculatedP = p1 + ((score - s1) / (s2 - s1)) * (p2 - p1);
-                return { value: Math.round(calculatedP), prefix: '' };
-            }
-        }
-        
+        for (let i = 0; i < interpolatedScores.length - 1; i++) { const p1 = interpolatedScores[i].percentile; const s1 = interpolatedScores[i].score; const p2 = interpolatedScores[i + 1].percentile; const s2 = interpolatedScores[i + 1].score; if (score === s1) return { value: p1, prefix: '' }; if (score === s2) return { value: p2, prefix: '' }; if (score > s1 && score < s2) { if (s2 === s1) { return { value: p1, prefix: '' }; } const calculatedP = p1 + ((score - s1) / (s2 - s1)) * (p2 - p1); return { value: Math.round(calculatedP), prefix: '' }; } }
         return { value: null, prefix: "Não foi possível determinar." };
     }
 
@@ -165,6 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         plotData.push({ x: [patientAge], y: [patientScore], mode: 'markers', name: 'Paciente', marker: { size: 12, color: '#2d3748', symbol: 'star' }, hoverinfo: 'name' });
 
+        // --- ALTERAÇÃO 1: Verificar se é um dispositivo móvel ---
+        const isMobile = window.innerWidth < 768;
+
         const layout = {
             title: `Curvas de Percentil para ${sex === 'male' ? 'Homens' : 'Mulheres'} ${ethnicity === 'western' ? 'Ocidentais' : 'Asiáticos'}`,
             xaxis: { title: 'Idade (anos)', range: [35, 85], dtick: 5, gridcolor: '#e2e8f0', zeroline: false },
@@ -178,6 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
             font: { family: 'Inter, sans-serif', color: '#4a5568' },
             margin: { t: 80, b: 50, l: 60, r: 40 }
         };
+
+        // --- ALTERAÇÃO 2: Aplicar configurações específicas para mobile ---
+        if (isMobile) {
+            // Adiciona uma quebra de linha no título para economizar espaço horizontal
+            layout.title = `Curvas de Percentil para<br>${sex === 'male' ? 'Homens' : 'Mulheres'} ${ethnicity === 'western' ? 'Ocidentais' : 'Asiáticos'}`;
+            // Muda a legenda para vertical e a posiciona no canto
+            layout.legend = { x: 1, y: 1, xanchor: 'right', yanchor: 'top', orientation: 'v' };
+            // Reduz a margem superior para compensar o título de duas linhas
+            layout.margin.t = 60;
+            // Reduz um pouco a fonte geral do gráfico
+            layout.font.size = 10;
+        }
 
         Plotly.newPlot('cacChartPlotly', plotData, layout, {responsive: true, displaylogo: false});
     }

@@ -105,51 +105,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayChart(patientScore, patientAge, sex, ethnicity) {
-        const dataSet = NOMOGRAM_DATA[ethnicity][sex];
-        if (!dataSet) return;
+    const dataSet = NOMOGRAM_DATA[ethnicity][sex];
+    if (!dataSet) return;
 
-        const plotData = [];
-        const colors = ['#63b3ed', '#4fd1c5', '#f6ad55', '#fc8181', '#b794f4', '#d69e2e'];
+    const plotData = [];
+    const colors = ['#63b3ed', '#4fd1c5', '#f6ad55', '#fc8181', '#b794f4', '#d69e2e'];
 
-        KNOWN_PERCENTILES.forEach((p, index) => {
-            const y_values = dataSet[p];
-            let interpolatedY = [];
-            try { const spline = new CubicSpline(AGE_POINTS, y_values); interpolatedY = PLOT_AGES.map(age => Math.max(0, Math.round(spline.interpolate(age)))); }
-            catch (e) { interpolatedY = Array(PLOT_AGES.length).fill(Math.round(y_values[0] || 0)); }
-            plotData.push({ x: PLOT_AGES, y: interpolatedY, mode: 'lines', name: `${p}º Percentil`, line: { shape: 'spline', color: colors[index % colors.length], width: 2.5 }, hoverinfo: 'name' });
-        });
-
-        plotData.push({ x: [patientAge], y: [patientScore], mode: 'markers', name: 'Paciente', marker: { size: 12, color: '#2d3748', symbol: 'star' }, hoverinfo: 'name' });
-
-        // --- ALTERAÇÃO 1: Verificar se é um dispositivo móvel ---
-        const isMobile = window.innerWidth < 768;
-
-        const layout = {
-            title: `Curvas de Percentil para ${sex === 'male' ? 'Homens' : 'Mulheres'} ${ethnicity === 'western' ? 'Ocidentais' : 'Asiáticos'}`,
-            xaxis: { title: 'Idade (anos)', range: [35, 85], dtick: 5, gridcolor: '#e2e8f0', zeroline: false },
-            yaxis: { title: 'Escore de Cálcio', rangemode: 'tozero', gridcolor: '#e2e8f0', zeroline: false },
-            hovermode: 'x unified',
-            showlegend: true,
-            legend: { x: 0.5, y: 1.1, xanchor: 'center', orientation: 'h' },
-            autosize: true,
-            paper_bgcolor: '#FFFFFF',
-            plot_bgcolor: '#FFFFFF',
-            font: { family: 'Inter, sans-serif', color: '#4a5568' },
-            margin: { t: 80, b: 50, l: 60, r: 40 }
-        };
-
-        // --- ALTERAÇÃO 2: Aplicar configurações específicas para mobile ---
-        if (isMobile) {
-            // Adiciona uma quebra de linha no título para economizar espaço horizontal
-            layout.title = `Curvas de Percentil para<br>${sex === 'male' ? 'Homens' : 'Mulheres'} ${ethnicity === 'western' ? 'Ocidentais' : 'Asiáticos'}`;
-            // Muda a legenda para vertical e a posiciona no canto
-            layout.legend = { x: 1, y: 1, xanchor: 'right', yanchor: 'top', orientation: 'v' };
-            // Reduz a margem superior para compensar o título de duas linhas
-            layout.margin.t = 60;
-            // Reduz um pouco a fonte geral do gráfico
-            layout.font.size = 10;
+    KNOWN_PERCENTILES.forEach((p, index) => {
+        const y_values = dataSet[p];
+        let interpolatedY = [];
+        try {
+            const spline = new CubicSpline(AGE_POINTS, y_values);
+            interpolatedY = PLOT_AGES.map(age => Math.max(0, Math.round(spline.interpolate(age))));
+        } catch (e) {
+            interpolatedY = Array(PLOT_AGES.length).fill(Math.round(y_values[0] || 0));
         }
+        plotData.push({
+            x: PLOT_AGES,
+            y: interpolatedY,
+            mode: 'lines',
+            name: `${p}º Percentil`,
+            line: { shape: 'spline', color: colors[index % colors.length], width: 2.5 },
+            hoverinfo: 'name'
+        });
+    });
 
-        Plotly.newPlot('cacChartPlotly', plotData, layout, {responsive: true, displaylogo: false});
+    plotData.push({
+        x: [patientAge],
+        y: [patientScore],
+        mode: 'markers',
+        name: 'Paciente',
+        marker: { size: 12, color: '#2d3748', symbol: 'star' },
+        hoverinfo: 'name'
+    });
+
+    // --- ALTERAÇÃO 1: Detectar se é um dispositivo móvel ---
+    const isMobile = window.innerWidth < 768;
+
+    // Layout padrão para desktop
+    const layout = {
+        title: `Curvas de Percentil para ${sex === 'male' ? 'Homens' : 'Mulheres'} ${ethnicity === 'western' ? 'Ocidentais' : 'Asiáticos'}`,
+        xaxis: { title: 'Idade (anos)', range: [35, 85], dtick: 5, gridcolor: '#e2e8f0', zeroline: false },
+        yaxis: { title: 'Escore de Cálcio', rangemode: 'tozero', gridcolor: '#e2e8f0', zeroline: false },
+        hovermode: 'x unified',
+        showlegend: true,
+        legend: { x: 0.5, y: 1.15, xanchor: 'center', yanchor: 'top', orientation: 'h' },
+        autosize: true,
+        paper_bgcolor: '#FFFFFF',
+        plot_bgcolor: '#FFFFFF',
+        font: { family: 'Inter, sans-serif', color: '#4a5568' },
+        margin: { t: 80, b: 50, l: 60, r: 40 }
+    };
+
+    // --- ALTERAÇÃO 2: Aplicar configurações específicas para mobile ---
+    if (isMobile) {
+        // Adiciona uma quebra de linha no título para economizar espaço horizontal
+        layout.title = `Curvas de Percentil para<br>${sex === 'male' ? 'Homens' : 'Mulheres'} (${ethnicity === 'western' ? 'Ocidental' : 'Asiática'})`;
+        
+        // Muda a legenda para VERTICAL e a posiciona no canto superior direito
+        layout.legend = {
+            x: 1,
+            y: 1,
+            xanchor: 'right', // Ancorado à direita
+            yanchor: 'top',   // Ancorado no topo
+            orientation: 'v'  // Orientação Vertical
+        };
+        
+        // Reduz as margens para dar mais espaço ao gráfico
+        layout.margin = { t: 60, b: 40, l: 50, r: 20 };
+        
+        // Reduz um pouco a fonte geral do gráfico para caber melhor
+        layout.font.size = 10;
+    }
+
+    Plotly.newPlot('cacChartPlotly', plotData, layout, { responsive: true, displaylogo: false });
     }
 });

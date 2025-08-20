@@ -1,77 +1,93 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Percentil de Escore de Cálcio Coronariano</title>
-    <!-- Link para a fonte Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Link para o arquivo CSS -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Meta tags para PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FFFFFF">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Calculadora de Percentil de Escore de Cálcio</h1>
+    <header>
+        <h1>Calculadora de Percentil de Escore de Cálcio Coronariano</h1>
+    </header>
 
-        <div class="main-content-area">
-            <div class="form-section">
+    <main class="container">
+        <section class="calculator-section">
+            <div class="input-group">
+                <label for="studySelect">Escolha o Estudo:</label>
+                <select id="studySelect">
+                    <option value="">-- Selecione um Estudo --</option>
+                    <option value="mcclelland">McClelland et al. (2006) - MESA</option>
+                    <option value="deRonde">De Ronde et al. (2020)</option>
+                    <option value="javaid">Javaid et al. (2022)</option>
+                </select>
+            </div>
+
+            <div id="calculatorForm" class="hidden">
                 <div class="input-group">
-                    <label for="calciumScore">Escore de Cálcio:</label>
-                    <input type="number" id="calciumScore" min="0" step="1" placeholder="Ex: 150" required>
+                    <label for="calciumScore">Valor do Escore de Cálcio (Agatston):</label>
+                    <input type="number" id="calciumScore" min="0" value="0">
                 </div>
 
                 <div class="input-group">
-                    <label for="age">Idade:</label>
-                    <input type="number" id="age" min="35" max="85" placeholder="Ex: 55" required>
+                    <label for="age" id="ageLabel">Idade (anos):</label>
+                    <select id="age"></select> <!-- Agora é um select -->
                 </div>
 
                 <div class="input-group">
-                    <label for="sex">Sexo:</label>
-                    <select id="sex" required>
-                        <option value="" disabled selected>Selecione...</option>
+                    <label for="gender">Sexo:</label>
+                    <select id="gender">
                         <option value="male">Masculino</option>
                         <option value="female">Feminino</option>
                     </select>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" id="ethnicityGroup">
                     <label for="ethnicity">Etnia:</label>
-                    <select id="ethnicity" required>
-                        <option value="" disabled selected>Selecione...</option>
-                        <option value="western">Ocidental</option>
-                        <option value="asian">Asiática</option>
+                    <select id="ethnicity">
+                        <!-- Options will be dynamically loaded by JavaScript -->
                     </select>
                 </div>
-
-                <button id="calculateBtn">Calcular Percentil</button>
+                
+                <button id="calculateButton">Calcular Percentil e Gerar Gráfico</button>
             </div>
 
-            <div class="result-section">
-                <div class="result-area">
-                    <h2>Resultado</h2>
-                    <p id="percentilPrincipal">Preencha os campos para calcular.</p>
-                    <p id="percentilExplicacao"></p>
-                </div>
+            <div id="results" class="results-area">
+                <h2>Resultado:</h2>
+                <p id="percentileResult"></p>
             </div>
-        </div>
+        </section>
 
-        <!-- Seção dedicada e centralizada para o gráfico -->
-        <div class="graph-section-wrapper">
-            <div id="chartWrapper" class="chart-wrapper-aspect-ratio" style="display: none;">
-                <div id="cacChartPlotly" class="chart-area"></div>
+        <section class="graph-section">
+            <div id="chart" class="chart-container"></div>
+            <div id="chartLegend" class="chart-legend"></div>
+        </section>
+        
+        <section class="table-section hidden" id="tableContainer">
+            <h2 id="tableTitle"></h2>
+            <div class="explanation" id="tableExplanation">
+                <!-- Explicação será preenchida via JS -->
             </div>
-        </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Percentil</th>
+                        <th scope="col">Escore de Agatston</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dados da tabela serão preenchidos via JS -->
+                </tbody>
+            </table>
+        </section>
+        
+        <section id="disclaimer" class="disclaimer-area">
+            <h2>Disclaimer:</h2>
+            <p id="disclaimerText"></p>
+        </section>
+    </main>
 
-        <!-- Div para o disclaimer -->
-        <div class="disclaimer">
-            <p id="disclaimer-text"></p>
-        </div>
-    </div>
-
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
